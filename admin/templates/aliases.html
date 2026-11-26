@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% block title %}Aliase{% endblock %}
+{% block content %}
+<h1>Aliase &amp; Weiterleitungen</h1>
+
+<div class="card">
+  <form class="row" method="post" action="{{ url_for('alias_add') }}">
+    <input type="hidden" name="csrf" value="{{ csrf }}">
+    <input name="local" placeholder="info (leer = Catch-All)" style="width:170px">
+    <span>@</span>
+    <select name="domain" required>
+      {% for d in domains %}<option>{{ d.name }}</option>{% endfor %}
+    </select>
+    <span>→</span>
+    <input name="destination" placeholder="ziel@domain.de, weiteres@ziel.de" required style="flex:1;min-width:220px">
+    <button class="primary">Anlegen</button>
+  </form>
+  <p class="muted" style="margin-bottom:0">Ein Alias darf auch als Absender verwendet werden – von allen Benutzern, die als Ziel eingetragen sind.</p>
+</div>
+
+<div class="card table-wrap">
+  <table>
+    <tr><th>Adresse</th><th>Ziel</th><th>Status</th><th></th></tr>
+    {% for a in aliases %}
+    <tr>
+      <td><strong>{{ a.source }}</strong>{% if a.source.startswith('@') %} <span class="pill">Catch-All</span>{% endif %}</td>
+      <td>{{ a.destination }}</td>
+      <td><span class="pill {{ 'on' if a.active }}">{{ 'aktiv' if a.active else 'inaktiv' }}</span></td>
+      <td class="actions">
+        <form class="inline" method="post" action="{{ url_for('alias_toggle', aid=a.id) }}">
+          <input type="hidden" name="csrf" value="{{ csrf }}">
+          <button>{{ 'Deaktivieren' if a.active else 'Aktivieren' }}</button>
+        </form>
+        <form class="inline" method="post" action="{{ url_for('alias_delete', aid=a.id) }}"
+              onsubmit="return confirm('Alias löschen?')">
+          <input type="hidden" name="csrf" value="{{ csrf }}">
+          <button class="danger">Löschen</button>
+        </form>
+      </td>
+    </tr>
+    {% else %}
+    <tr><td colspan="4" class="muted">Noch keine Aliase.</td></tr>
+    {% endfor %}
+  </table>
+</div>
+{% endblock %}

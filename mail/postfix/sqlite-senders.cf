@@ -1,0 +1,5 @@
+dbpath = /data/config/mail.db
+# Liefert die Logins, die mit dieser Absenderadresse senden dürfen.
+# Postfix fragt erst 'user@domain', dann '@domain' ab –
+# ein Eintrag '@domain' erlaubt also jede Adresse der Domain.
+query = SELECT login FROM senders WHERE sender = '%s'

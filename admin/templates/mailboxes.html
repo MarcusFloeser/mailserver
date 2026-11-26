@@ -1,0 +1,72 @@
+{% extends "base.html" %}
+{% block title %}Postfächer{% endblock %}
+{% block content %}
+<h1>Postfächer</h1>
+<p class="muted" style="margin-top:-8px">
+  {{ mailboxes|length }} Postfächer · {{ total|filesize }} belegt ·
+  Standardlimit {{ 'unbegrenzt' if default_mb == 0 else (default_mb / 1024)|round(1) ~ ' GB' }}.
+  Benutzer anlegen/ändern weiterhin in phpLDAPadmin.
+</p>
+
+{% if error %}<div class="flash error">LDAP-Fehler: {{ error }}</div>{% endif %}
+{% if quota_error %}<div class="flash error">Belegung nicht abrufbar (Mail-Container): {{ quota_error }}</div>{% endif %}
+
+<style>
+  .meter { height: 6px; background: var(--line); border-radius: 3px; overflow: hidden; margin-top: 4px; min-width: 120px; }
+  .meter > span { display: block; height: 100%; background: var(--accent); }
+  .meter.warn > span { background: #c48a1c; }
+  .meter.full > span { background: var(--danger); }
+  .quota-form input { width: 80px; padding: 4px 8px; }
+  .quota-form button { padding: 4px 10px; }
+</style>
+
+<div class="card table-wrap">
+  <table>
+    <tr><th>Adresse</th><th>Belegung</th><th>Limit (GB)</th></tr>
+    {% for m in mailboxes %}
+    <tr>
+      <td><strong>{{ m.email }}</strong><br><span class="muted">{{ m.name }}</span><br>
+        <a href="{{ url_for('vacation', user=m.email) }}">Abwesenheit</a> ·
+        <a href="{{ url_for('filters', user=m.email) }}">Filter</a></td>
+      <td>
+        {{ m.used|filesize }} {% if m.limit %}<span class="muted">von {{ m.limit|filesize }}</span>{% endif %}
+        {% if m.percent is not none %}
+          <div class="meter {{ 'full' if m.percent >= 95 else 'warn' if m.percent >= 80 }}">
+            <span style="width: {{ m.percent }}%"></span>
+          </div>
+        {% endif %}
+      </td>
+      <td>
+        {% if m.ldap_mb is not none %}
+        <strong>{{ m.ldap_gb }}</strong> <span class="pill on" title="Attribut {{ ldap_quota_attr }}">LDAP</span>
+        {% else %}
+        <form class="inline quota-form" method="post" action="{{ url_for('mailbox_quota') }}">
+          <input type="hidden" name="csrf" value="{{ csrf }}">
+          <input type="hidden" name="email" value="{{ m.email }}">
+          <input name="quota_gb" inputmode="decimal"
+                 value="{{ m.custom_gb }}"
+                 placeholder="Std.">
+          <button>OK</button>
+        </form>
+        {% endif %}
+      </td>
+    </tr>
+    {% else %}
+    <tr><td colspan="3" class="muted">Keine LDAP-Benutzer mit Adresse in einer aktiven Domain gefunden.</td></tr>
+    {% endfor %}
+  </table>
+  <p class="muted" style="margin-bottom:0">Limit leer = Standard, 0 = unbegrenzt. Änderungen gelten sofort.
+    {% if ldap_quota_attr %}Ist bei einem Benutzer <code>{{ ldap_quota_attr }}</code> in LDAP gesetzt, hat dieser Wert Vorrang
+    und wird nur in LDAP geändert.{% endif %}</p>
+</div>
+
+<div class="card">
+  <strong>Client-Einstellungen</strong>
+  <table>
+    <tr><td>IMAP</td><td><code>{{ mail_hostname }}</code>, Port 993, SSL/TLS</td></tr>
+    <tr><td>SMTP</td><td><code>{{ mail_hostname }}</code>, Port 465 (SSL/TLS) oder 587 (STARTTLS)</td></tr>
+    <tr><td>CalDAV/CardDAV</td><td><code>https://{{ mail_hostname }}/dav/</code></td></tr>
+    <tr><td>Benutzername</td><td>vollständige E-Mail-Adresse, Passwort aus LDAP</td></tr>
+  </table>
+</div>
+{% endblock %}

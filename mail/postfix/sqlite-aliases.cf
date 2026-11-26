@@ -1,0 +1,4 @@
+dbpath = /data/config/mail.db
+# Eine Zeile pro Ziel; Postfix fügt mehrere Ergebnisse kommagetrennt zusammen.
+# '@domain.tld' als Quelle = Catch-All.
+query = SELECT destination FROM aliases WHERE source = '%s' AND active = 1

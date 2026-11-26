@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block title %}DNS · {{ domain.name }}{% endblock %}
+{% block content %}
+<h1>DNS-Einträge für {{ domain.name }}</h1>
+<div class="card">
+  <p><strong>MX</strong> – Mails für die Domain an diesen Server</p>
+  <pre>{{ domain.name }}.   IN MX 10 {{ mail_hostname }}.</pre>
+
+  <p><strong>SPF</strong> – nur dieser Server darf für die Domain senden</p>
+  <pre>{{ domain.name }}.   IN TXT "v=spf1 mx -all"</pre>
+
+  <p><strong>DMARC</strong> – zum Start im Beobachtungsmodus</p>
+  <pre>_dmarc.{{ domain.name }}.   IN TXT "v=DMARC1; p=none; rua=mailto:postmaster@{{ domain.name }}"</pre>
+
+  <p><strong>Kalender/Kontakte-Discovery</strong> (optional)</p>
+  <pre>_caldavs._tcp.{{ domain.name }}.   IN SRV 0 1 443 {{ mail_hostname }}.
+_carddavs._tcp.{{ domain.name }}.  IN SRV 0 1 443 {{ mail_hostname }}.</pre>
+
+  <p class="muted">Einmalig für den Server selbst: A/AAAA-Record für <code>{{ mail_hostname }}</code> und ein passender PTR-Record (Reverse-DNS) beim Hoster.</p>
+</div>
+<p><a href="{{ url_for('domains') }}">← zurück</a></p>
+{% endblock %}

@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+{% block title %}Filter{% endblock %}
+{% block content %}
+<h1>Filterregeln</h1>
+{% include "_target.html" %}
+
+<div class="card">
+  <form class="row" method="post">
+    <input type="hidden" name="csrf" value="{{ csrf }}">
+    {% if email != user %}<input type="hidden" name="user" value="{{ email }}">{% endif %}
+    <span>Wenn</span>
+    <select name="field">{% for k, f in fields.items() %}<option value="{{ k }}">{{ f[0] }}</option>{% endfor %}</select>
+    <select name="op">{% for k, o in ops.items() %}<option value="{{ k }}">{{ o[0] }}</option>{% endfor %}</select>
+    <input name="value" placeholder="newsletter@ oder Rechnung" required style="flex:1;min-width:160px">
+    <span>dann</span>
+    <select name="action" id="action">{% for k, a in actions.items() %}<option value="{{ k }}">{{ a }}</option>{% endfor %}</select>
+    <input name="target" id="target" placeholder="Ordner, z. B. Newsletter" style="min-width:180px">
+    <button class="primary">Hinzufügen</button>
+  </form>
+  <p class="muted" style="margin-bottom:0">Unterordner mit „/“, z. B. <code>Kunden/Müller</code>. Fehlende Ordner werden angelegt.</p>
+</div>
+
+<div class="card table-wrap">
+  <table>
+    <tr><th>#</th><th>Bedingung</th><th>Aktion</th><th></th></tr>
+    {% for r in rules %}
+    <tr>
+      <td class="muted">{{ loop.index }}</td>
+      <td>{{ fields[r.field][0] }} {{ ops[r.op][0] }} „{{ r.value }}“</td>
+      <td>{{ actions[r.action] }}{% if r.target %}: <strong>{{ r.target }}</strong>{% endif %}</td>
+      <td class="actions">
+        {% set i = loop.index0 %}
+        {% for op, label in [('up', '↑'), ('down', '↓'), ('delete', 'Löschen')] %}
+        <form class="inline" method="post" action="{{ url_for('filter_change', idx=i, op=op) }}"
+              {% if op == 'delete' %}onsubmit="return confirm('Regel löschen?')"{% endif %}>
+          <input type="hidden" name="csrf" value="{{ csrf }}">
+          {% if email != user %}<input type="hidden" name="user" value="{{ email }}">{% endif %}
+          <button class="{{ 'danger' if op == 'delete' }}">{{ label }}</button>
+        </form>
+        {% endfor %}
+      </td>
+    </tr>
+    {% else %}
+    <tr><td colspan="4" class="muted">Noch keine Regeln.</td></tr>
+    {% endfor %}
+  </table>
+  <p class="muted" style="margin-bottom:0">Regeln werden von oben nach unten geprüft. Nach „verschieben“, „weiterleiten (ohne Kopie)“
+    und „löschen“ ist Schluss, die übrigen Aktionen lassen weitere Regeln zu.</p>
+</div>
+
+<script>
+  // Zielfeld nur zeigen, wenn die Aktion eins braucht
+  const a = document.getElementById('action'), t = document.getElementById('target');
+  function upd() {
+    const v = a.value;
+    t.style.display = (v === 'move' || v.startsWith('forward')) ? '' : 'none';
+    t.placeholder = v === 'move' ? 'Ordner, z. B. Newsletter' : 'Weiterleiten an …';
+    t.type = v === 'move' ? 'text' : 'email';
+  }
+  a.addEventListener('change', upd); upd();
+</script>
+{% endblock %}

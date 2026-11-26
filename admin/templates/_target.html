@@ -1,0 +1,8 @@
+{% if email != user %}
+<div class="flash ok">Du bearbeitest als Admin das Postfach <strong>{{ email }}</strong>.
+  <a href="{{ url_for(request.endpoint) }}">Zum eigenen Postfach</a></div>
+{% endif %}
+{% if active and active != 'webui' %}
+<div class="flash error">Aktuell ist ein anderes Filterskript aktiv (<code>{{ active }}</code>, z. B. aus Thunderbird per ManageSieve).
+  Beim Speichern hier wird stattdessen das Skript der Weboberfläche aktiviert.</div>
+{% endif %}

@@ -1,0 +1,74 @@
+name: mailserver
+
+services:
+  # Reverse-Proxy + automatische Let's-Encrypt-Zertifikate.
+  # Das Zertifikat wird auch von Postfix/Dovecot mitgenutzt.
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      MAIL_HOSTNAME: ${MAIL_HOSTNAME}
+      CADDY_TLS: ${CADDY_TLS}
+    volumes:
+      - ./caddy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    networks: [mailnet]
+
+  # Postfix (SMTP) + Dovecot (IMAP/LMTP/SASL)
+  mail:
+    build: ./mail
+    restart: unless-stopped
+    hostname: ${MAIL_HOSTNAME}
+    env_file: .env
+    ports:
+      - "25:25"     # SMTP (Empfang von anderen Servern)
+      - "465:465"   # SMTPS (Client-Versand, implizites TLS)
+      - "587:587"   # Submission (Client-Versand, STARTTLS)
+      - "993:993"   # IMAPS
+      - "4190:4190" # ManageSieve (Filter aus Thunderbird & Co., STARTTLS)
+    volumes:
+      - mail_data:/var/mail
+      - mail_queue:/var/spool/postfix
+      - config_db:/data/config
+      - caddy_data:/caddy-data:ro
+    depends_on: [admin, caddy]
+    networks: [mailnet, ldap]
+
+  # CalDAV / CardDAV
+  radicale:
+    build: ./radicale
+    restart: unless-stopped
+    env_file: .env
+    volumes:
+      - dav_data:/data
+    networks: [mailnet, ldap]
+
+  # Kleine Verwaltungsoberfläche (Domains, Aliase, Postfach-Übersicht)
+  admin:
+    build: ./admin
+    restart: unless-stopped
+    env_file: .env
+    volumes:
+      - config_db:/data/config
+      - mail_data:/var/mail        # schreibt die Sieve-Skripte der Benutzer
+    networks: [mailnet, ldap]
+
+volumes:
+  caddy_data:
+  caddy_config:
+  mail_data:
+  mail_queue:
+  config_db:
+  dav_data:
+
+networks:
+  mailnet:
+  # Externes Netz deines bestehenden OpenLDAP-Stacks.
+  # Name per `docker network ls` prüfen und in .env setzen.
+  ldap:
+    external: true
+    name: ${LDAP_DOCKER_NETWORK}

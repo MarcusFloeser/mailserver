@@ -1,0 +1,20 @@
+{$MAIL_HOSTNAME} {
+	tls {$CADDY_TLS}
+	encode gzip
+
+	# Auto-Discovery für Kalender-/Kontakt-Clients
+	redir /.well-known/caldav /dav/ 301
+	redir /.well-known/carddav /dav/ 301
+
+	# CalDAV / CardDAV unter /dav/
+	handle_path /dav/* {
+		reverse_proxy radicale:5232 {
+			header_up X-Script-Name /dav
+		}
+	}
+
+	# Verwaltungsoberfläche
+	handle {
+		reverse_proxy admin:8000
+	}
+}

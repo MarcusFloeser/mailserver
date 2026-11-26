@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+{% block title %}Absender{% endblock %}
+{% block content %}
+<h1>Absender-Berechtigungen</h1>
+<p class="muted" style="margin-top:-8px">
+  Jeder Benutzer darf immer mit seiner eigenen Adresse senden und mit allen Aliasen, die an ihn gehen.
+  Hier erlaubst du <strong>zusätzliche</strong> Absenderadressen – auch ohne Weiterleitung.
+</p>
+
+<div class="card">
+  <form class="row" method="post" action="{{ url_for('sender_add') }}">
+    <input type="hidden" name="csrf" value="{{ csrf }}">
+    <input name="login" type="email" placeholder="Benutzer (Login), z. B. anna@example.com" required style="flex:1;min-width:220px">
+    <span>darf senden als</span>
+    <input name="local" placeholder="vertrieb (leer = alle)" style="width:160px">
+    <span>@</span>
+    <select name="domain" required>
+      {% for d in domains %}<option>{{ d.name }}</option>{% endfor %}
+    </select>
+    <button class="primary">Erlauben</button>
+  </form>
+</div>
+
+<div class="card table-wrap">
+  <table>
+    <tr><th>Benutzer</th><th>darf senden als</th><th></th></tr>
+    {% for s in senders %}
+    <tr>
+      <td><strong>{{ s.login }}</strong></td>
+      <td>
+        {% if s.sender.startswith('@') %}
+          jede Adresse <code>*{{ s.sender }}</code> <span class="pill">ganze Domain</span>
+        {% else %}
+          {{ s.sender }}
+        {% endif %}
+      </td>
+      <td class="actions">
+        <form class="inline" method="post" action="{{ url_for('sender_delete', sid=s.id) }}"
+              onsubmit="return confirm('Berechtigung entfernen?')">
+          <input type="hidden" name="csrf" value="{{ csrf }}">
+          <button class="danger">Entfernen</button>
+        </form>
+      </td>
+    </tr>
+    {% else %}
+    <tr><td colspan="3" class="muted">Noch keine zusätzlichen Absender-Berechtigungen.</td></tr>
+    {% endfor %}
+  </table>
+</div>
+
+<p class="muted">Im Mailprogramm muss die Adresse zusätzlich als Identität bzw. Absender eingerichtet werden
+(Thunderbird: Konten-Einstellungen → Identitäten verwalten).</p>
+{% endblock %}

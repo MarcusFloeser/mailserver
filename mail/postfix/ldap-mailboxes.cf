@@ -1,0 +1,9 @@
+server_host = ${LDAP_URI}
+version = 3
+bind = yes
+bind_dn = ${LDAP_BIND_DN}
+bind_pw = ${LDAP_BIND_PW}
+search_base = ${LDAP_BASE_DN}
+scope = sub
+query_filter = ${LDAP_FILTER_POSTFIX}
+result_attribute = ${LDAP_MAIL_ATTR}

@@ -1,0 +1,65 @@
+# Postfix – generiert aus Template beim Containerstart
+
+compatibility_level = 3.6
+myhostname = ${MAIL_HOSTNAME}
+myorigin = $myhostname
+mydestination = localhost
+mynetworks = 127.0.0.0/8 [::1]/128
+inet_interfaces = all
+inet_protocols = all
+smtpd_banner = $myhostname ESMTP
+biff = no
+append_dot_mydomain = no
+alias_maps =
+alias_database =
+recipient_delimiter = +
+message_size_limit = ${MESSAGE_SIZE_LIMIT}
+mailbox_size_limit = 0
+maillog_file = /dev/stdout
+
+# ---------------------------------------------------------------- Virtuelle Domains
+# Domains + Aliase: SQLite (gepflegt über die Weboberfläche)
+# Postfächer:       LDAP (jeder Benutzer mit passender Mailadresse)
+virtual_mailbox_domains = sqlite:/etc/postfix/maps/sqlite-domains.cf
+virtual_mailbox_maps    = ldap:/etc/postfix/maps/ldap-mailboxes.cf
+# (LDAP hier zusätzlich als Identitäts-Map, damit ein Catch-All
+#  '@domain' keine echten Postfächer überschreibt)
+virtual_alias_maps      = sqlite:/etc/postfix/maps/sqlite-aliases.cf, ldap:/etc/postfix/maps/ldap-mailboxes.cf
+virtual_transport       = lmtp:unix:private/dovecot-lmtp
+
+# Wer darf mit welcher Absenderadresse senden?
+#   1. eigene Adresse (LDAP)
+#   2. Aliase, bei denen der Benutzer Ziel ist
+#   3. explizite Absender-Berechtigungen aus der Weboberfläche
+smtpd_sender_login_maps = unionmap:{ldap:/etc/postfix/maps/ldap-mailboxes.cf, sqlite:/etc/postfix/maps/sqlite-aliases.cf, sqlite:/etc/postfix/maps/sqlite-senders.cf}
+
+# ---------------------------------------------------------------- TLS
+smtpd_tls_chain_files = /certs/privkey.pem, /certs/fullchain.pem
+smtpd_tls_security_level = may
+smtpd_tls_auth_only = yes
+smtpd_tls_protocols = >=TLSv1.2
+smtpd_tls_mandatory_protocols = >=TLSv1.2
+smtpd_tls_loglevel = 1
+smtp_tls_security_level = may
+smtp_tls_CAfile = /etc/ssl/certs/ca-certificates.crt
+smtp_tls_protocols = >=TLSv1.2
+smtp_tls_loglevel = 1
+tls_preempt_cipherlist = yes
+
+# ---------------------------------------------------------------- SASL (über Dovecot)
+smtpd_sasl_type = dovecot
+smtpd_sasl_path = private/auth
+smtpd_sasl_auth_enable = no
+
+# ---------------------------------------------------------------- Restriktionen (Port 25)
+smtpd_helo_required = yes
+disable_vrfy_command = yes
+smtpd_helo_restrictions = permit_mynetworks, reject_invalid_helo_hostname, reject_non_fqdn_helo_hostname
+smtpd_sender_restrictions = permit_mynetworks, reject_non_fqdn_sender, reject_unknown_sender_domain
+smtpd_recipient_restrictions =
+    permit_mynetworks,
+    reject_non_fqdn_recipient,
+    reject_unknown_recipient_domain,
+    reject_unauth_destination,
+    reject_unlisted_recipient,
+    check_policy_service unix:private/quota-status

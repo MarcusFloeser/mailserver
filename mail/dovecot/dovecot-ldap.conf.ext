@@ -1,0 +1,12 @@
+uris = ${LDAP_URI}
+ldap_version = 3
+dn = ${LDAP_BIND_DN}
+dnpass = ${LDAP_BIND_PW}
+base = ${LDAP_BASE_DN}
+scope = subtree
+
+# Passwort wird geprüft, indem sich Dovecot als der Benutzer selbst bindet
+auth_bind = yes
+
+pass_filter = ${LDAP_FILTER_DOVECOT}
+pass_attrs = ${LDAP_MAIL_ATTR}=user

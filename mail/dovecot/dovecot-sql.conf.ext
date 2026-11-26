@@ -1,0 +1,13 @@
+driver = sqlite
+connect = /data/config/mail.db
+
+# Liefert für jeden Benutzer genau eine Zeile (SELECT ohne FROM).
+# quota_rule (MB, 0 = unbegrenzt), Vorrang in dieser Reihenfolge:
+#   1. ldap_quotas – aus dem LDAP-Attribut, von der Weboberfläche abgeglichen
+#   2. quotas      – in der Weboberfläche gesetzt
+#   3. Standard    – QUOTA_DEFAULT_MB
+user_query = SELECT 5000 AS uid, 5000 AS gid, '/var/mail/%Ld/%Ln' AS home, \
+  '*:storage=' || COALESCE( \
+      (SELECT quota_mb FROM ldap_quotas WHERE email = '%Lu'), \
+      (SELECT quota_mb FROM quotas WHERE email = '%Lu'), \
+      ${QUOTA_DEFAULT_MB}) || 'M' AS quota_rule

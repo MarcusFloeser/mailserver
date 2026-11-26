@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% block title %}Abwesenheit{% endblock %}
+{% block content %}
+<h1>Abwesenheitsnotiz</h1>
+{% include "_target.html" %}
+
+<form class="card" method="post">
+  <input type="hidden" name="csrf" value="{{ csrf }}">
+  {% if email != user %}<input type="hidden" name="user" value="{{ email }}">{% endif %}
+
+  <p>
+    <label><input type="checkbox" name="enabled" value="1" {{ 'checked' if v.enabled }}>
+      <strong>Abwesenheitsnotiz aktiv</strong></label>
+  </p>
+
+  <div class="row" style="display:flex;gap:16px;flex-wrap:wrap">
+    <label>Von<br><input type="date" name="start" value="{{ v.start }}"></label>
+    <label>Bis (einschließlich)<br><input type="date" name="end" value="{{ v.end }}"></label>
+    <label>Gleichem Absender erneut antworten nach<br>
+      <input type="number" name="days" min="1" max="30" value="{{ v.days }}" style="width:70px"> Tag(en)</label>
+  </div>
+  <p class="muted" style="margin-top:4px">Ohne Datum gilt die Notiz sofort und bis du sie abschaltest.</p>
+
+  <p><label>Betreff<br>
+    <input name="subject" value="{{ v.subject }}" placeholder="Abwesend bis …" style="width:100%"></label></p>
+  <p><label>Text<br>
+    <textarea name="body" rows="8" style="width:100%;font:inherit;color:var(--text);background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:8px"
+      placeholder="Vielen Dank für Ihre Nachricht. Ich bin bis … nicht erreichbar …">{{ v.body }}</textarea></label></p>
+
+  <button class="primary">Speichern</button>
+</form>
+
+<p class="muted">Antwortet auf Mails an: {{ addresses|join(', ') }}.
+Mailinglisten, automatische Mails und Spam-Absender bekommen keine Antwort.</p>
+{% endblock %}

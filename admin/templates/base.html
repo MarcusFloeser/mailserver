@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{% block title %}Mail-Verwaltung{% endblock %} · {{ mail_hostname }}</title>
+<style>
+  :root {
+    --bg: #f5f5f2; --card: #ffffff; --text: #1d1d1b; --muted: #6b6b66;
+    --line: #e2e1dc; --accent: #2f5d50; --accent-text: #ffffff;
+    --danger: #a33a2c; --ok-bg: #e6f0ea; --err-bg: #f7e4e1;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #161716; --card: #1f201f; --text: #e8e8e4; --muted: #9a9a94;
+      --line: #333431; --accent: #7fb5a2; --accent-text: #10201b;
+      --danger: #e07a6b; --ok-bg: #1f3329; --err-bg: #3a2420;
+    }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text);
+         font: 15px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif; }
+  header { border-bottom: 1px solid var(--line); background: var(--card); }
+  .bar { max-width: 960px; margin: 0 auto; padding: 12px 16px;
+         display: flex; align-items: center; gap: 20px; flex-wrap: wrap; }
+  .brand { font-weight: 600; }
+  .brand small { color: var(--muted); font-weight: 400; margin-left: 6px; }
+  nav { display: flex; gap: 4px; flex: 1; flex-wrap: wrap; }
+  nav a { color: var(--muted); text-decoration: none; padding: 6px 10px; border-radius: 6px; }
+  nav a.on, nav a:hover { color: var(--text); background: var(--bg); }
+  main { max-width: 960px; margin: 24px auto; padding: 0 16px; }
+  h1 { font-size: 22px; margin: 0 0 16px; }
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 10px;
+          padding: 16px; margin-bottom: 20px; }
+  table { width: 100%; border-collapse: collapse; }
+  th, td { text-align: left; padding: 9px 8px; border-bottom: 1px solid var(--line); vertical-align: middle; }
+  th { font-size: 12px; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); font-weight: 600; }
+  tr:last-child td { border-bottom: 0; }
+  td.actions { text-align: right; white-space: nowrap; }
+  .table-wrap { overflow-x: auto; }
+  form.inline { display: inline; }
+  form.row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+  input, select { font: inherit; color: var(--text); background: var(--bg);
+                  border: 1px solid var(--line); border-radius: 6px; padding: 7px 10px; }
+  input:focus, select:focus { outline: 2px solid var(--accent); outline-offset: -1px; }
+  button { font: inherit; border: 1px solid var(--line); background: var(--card); color: var(--text);
+           border-radius: 6px; padding: 6px 12px; cursor: pointer; }
+  button.primary { background: var(--accent); color: var(--accent-text); border-color: var(--accent); }
+  button.danger { color: var(--danger); }
+  button.link { border: 0; background: none; color: var(--muted); padding: 6px 8px; }
+  .pill { font-size: 12px; padding: 2px 8px; border-radius: 99px; border: 1px solid var(--line); color: var(--muted); }
+  .pill.on { color: var(--accent); border-color: var(--accent); }
+  .muted { color: var(--muted); }
+  .flash { padding: 10px 14px; border-radius: 8px; margin-bottom: 16px; }
+  .flash.ok { background: var(--ok-bg); } .flash.error { background: var(--err-bg); }
+  code, pre { font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: 13px; }
+  pre { background: var(--bg); border: 1px solid var(--line); border-radius: 6px; padding: 10px; overflow-x: auto; white-space: pre-wrap; word-break: break-all; }
+</style>
+</head>
+<body>
+{% if user %}
+<header><div class="bar">
+  <div class="brand">Mail<small>{{ mail_hostname }}</small></div>
+  <nav>
+    <a href="{{ url_for('vacation') }}" class="{{ 'on' if request.endpoint == 'vacation' }}">Abwesenheit</a>
+    <a href="{{ url_for('filters') }}" class="{{ 'on' if request.endpoint == 'filters' }}">Filter</a>
+    {% if is_admin %}
+    <span style="border-left:1px solid var(--line);margin:4px 6px"></span>
+    <a href="{{ url_for('domains') }}" class="{{ 'on' if request.endpoint in ('domains','domain_dns') }}">Domains</a>
+    <a href="{{ url_for('aliases') }}" class="{{ 'on' if request.endpoint == 'aliases' }}">Aliase</a>
+    <a href="{{ url_for('senders') }}" class="{{ 'on' if request.endpoint == 'senders' }}">Absender</a>
+    <a href="{{ url_for('mailboxes') }}" class="{{ 'on' if request.endpoint == 'mailboxes' }}">Postfächer</a>
+    {% endif %}
+  </nav>
+  <form class="inline" method="post" action="{{ url_for('logout') }}">
+    <input type="hidden" name="csrf" value="{{ csrf }}">
+    <span class="muted">{{ user }}</span> <button class="link">Abmelden</button>
+  </form>
+</div></header>
+{% endif %}
+<main>
+  {% for cat, msg in get_flashed_messages(with_categories=true) %}
+    <div class="flash {{ cat }}">{{ msg }}</div>
+  {% endfor %}
+  {% block content %}{% endblock %}
+</main>
+</body>
+</html>
